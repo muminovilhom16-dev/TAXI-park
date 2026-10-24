@@ -7,7 +7,7 @@ import {
   type FinanceSettings,
   type Paginated,
 } from "@taxi/shared";
-import { Search } from "lucide-react";
+import { FileDown, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { formatPhone } from "@/components/crm";
@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { Field, Input, Select } from "@/components/ui/form";
 import { FormActions, FormError } from "@/components/ui/form-error";
-import { api } from "@/lib/api";
+import { api, apiUrl } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { useDebounced } from "@/lib/hooks";
 import { useFormMutation } from "@/lib/use-form-mutation";
@@ -250,5 +250,18 @@ export function ReasonDialog({
         </FormActions>
       </form>
     </Dialog>
+  );
+}
+
+/** Downloads a CSV export; shown only with the export right. */
+export function ExportButton({ path, query }: { path: string; query?: Record<string, unknown> }) {
+  const { can } = useAuth();
+  if (!can("reports.export")) return null;
+  return (
+    <Button variant="secondary" asChild>
+      <a href={apiUrl(path, query)} download>
+        <FileDown className="h-4 w-4" /> Excel (CSV)
+      </a>
+    </Button>
   );
 }

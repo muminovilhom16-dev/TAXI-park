@@ -1,0 +1,10 @@
+# Keep secrets, host builds and data out of the image build context.
+.git
+**/node_modules
+**/dist
+.env
+.env.*
+!.env.example
+backups
+**/test-results
+**/playwright-report

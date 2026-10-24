@@ -5,17 +5,29 @@ import {
   earningCreateSchema,
   earningImportSchema,
   earningListQuerySchema,
+  formatDay,
   voidSchema,
   type EarningRow,
   type EarningTotals,
 } from "@taxi/shared";
 import { aggregators, dailyEarnings, drivers, importBatches, users } from "../db/schema/index.js";
 import { writeAudit } from "../lib/audit.js";
+import { EXPORT_LIMIT, moneyCell, phoneCell, sendCsv } from "../lib/csv-export.js";
 import { AppError, conflict, isUniqueViolation, notFound, parseInput } from "../lib/errors.js";
 import { buildImportPreview, sha256 } from "../services/earnings-import.js";
 import { getFinanceSettings, insertEarning, voidEarning } from "../services/finance.js";
 
 const idParams = z.object({ id: z.string().uuid() });
+
+function listWhere(q: z.infer<typeof earningListQuerySchema>) {
+  return and(
+    q.from ? gte(dailyEarnings.workDate, q.from) : undefined,
+    q.to ? lte(dailyEarnings.workDate, q.to) : undefined,
+    q.driverId ? eq(dailyEarnings.driverId, q.driverId) : undefined,
+    q.aggregatorId ? eq(dailyEarnings.aggregatorId, q.aggregatorId) : undefined,
+    q.status === "all" ? undefined : eq(dailyEarnings.status, q.status),
+  );
+}
 const commitSchema = earningImportSchema.extend({ sha256: z.string().length(64) });
 
 export const earningRoutes: FastifyPluginAsync = async (app) => {
@@ -26,13 +38,7 @@ export const earningRoutes: FastifyPluginAsync = async (app) => {
 
   app.get("/", { preHandler: canRead }, async (req): Promise<{ items: EarningRow[]; total: number; totals: EarningTotals }> => {
     const q = parseInput(earningListQuerySchema, req.query);
-    const where = and(
-      q.from ? gte(dailyEarnings.workDate, q.from) : undefined,
-      q.to ? lte(dailyEarnings.workDate, q.to) : undefined,
-      q.driverId ? eq(dailyEarnings.driverId, q.driverId) : undefined,
-      q.aggregatorId ? eq(dailyEarnings.aggregatorId, q.aggregatorId) : undefined,
-      q.status === "all" ? undefined : eq(dailyEarnings.status, q.status),
-    );
+    const where = listWhere(q);
     const creator = aliasedTable(users, "creator");
     const [rows, [agg]] = await Promise.all([
       app.db
@@ -81,6 +87,42 @@ export const earningRoutes: FastifyPluginAsync = async (app) => {
       total: agg?.total ?? 0,
       totals: { count: agg?.count ?? 0, grossAmount: agg?.gross ?? "0.00", commissionAmount: agg?.commission ?? "0.00" },
     };
+  });
+
+  app.get("/export", { preHandler: [canRead, app.requirePermission("reports.export")] }, async (req, reply) => {
+    const q = parseInput(earningListQuerySchema, req.query);
+    const rows = await app.db
+      .select({
+        e: dailyEarnings,
+        driverFirst: drivers.firstName,
+        driverLast: drivers.lastName,
+        driverPhone: drivers.phone,
+        aggregatorName: aggregators.name,
+      })
+      .from(dailyEarnings)
+      .innerJoin(drivers, eq(drivers.id, dailyEarnings.driverId))
+      .innerJoin(aggregators, eq(aggregators.id, dailyEarnings.aggregatorId))
+      .where(listWhere(q))
+      .orderBy(dailyEarnings.workDate, drivers.lastName, drivers.firstName)
+      .limit(EXPORT_LIMIT);
+    await writeAudit(app.db, req, { action: "report.export", entityType: "daily_earning", after: { ...q, rows: rows.length } });
+    return sendCsv(
+      reply,
+      `tushum_${q.from ?? "boshidan"}_${q.to ?? "bugun"}.csv`,
+      ["Sana", "Haydovchi", "Telefon", "Agregator", "Tushum", "Stavka %", "Komissiya", "Manba", "Holat", "Izoh"],
+      rows.map((r) => [
+        formatDay(r.e.workDate),
+        `${r.driverLast} ${r.driverFirst}`,
+        phoneCell(r.driverPhone),
+        r.aggregatorName,
+        moneyCell(r.e.grossAmount),
+        moneyCell(r.e.commissionRatePercent),
+        moneyCell(r.e.commissionAmount),
+        r.e.source === "csv" ? "CSV" : "Qo'lda",
+        r.e.status === "active" ? "Amalda" : "Bekor qilingan",
+        r.e.voidReason ?? r.e.note,
+      ]),
+    );
   });
 
   app.post("/", { preHandler: canEnter }, async (req, reply) => {

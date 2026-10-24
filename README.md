@@ -13,7 +13,9 @@ O'zbekistondagi taksi parklari uchun boshqaruv tizimi: haydovchilar, agregator h
 | Haydovchilar CRM, avtomobillar, agregatorlar, CRM ko'rsatkichlari | Tayyor |
 | Kunlik tushum (qo'lda va CSV), komissiya, kunlik obuna, qarz, to'lovlar | Tayyor |
 | Real agregator hisobotini to'g'ridan-to'g'ri import qilish | Hisobot namunasi kerak |
-| Dashboard, hisobotlar, eksport, bildirishnomalar | 4-qadam |
+| Excel/CSV eksport (tushum, qarzlar, to'lovlar) | Tayyor |
+| Serverga o'rnatish: Docker, HTTPS, kundalik zaxira va tiklash | Tayyor |
+| Kengaytirilgan hisobotlar, bildirishnomalar | Keyingi bosqich |
 
 Moliyaviy tushunchalar va qoidalar: [docs/finance-model.md](docs/finance-model.md).
 
@@ -69,15 +71,15 @@ Drizzle ifodalay olmaydigan qoidalar (triggerlar, EXCLUDE constraintlar) `drizzl
 
 ## Production (Docker Compose)
 
+To'liq qo'llanma: [docs/deploy.md](docs/deploy.md) (server, domen, HTTPS, zaxira, tiklash, yangilash).
+
 ```bash
-cp .env.example .env      # POSTGRES_PASSWORD va PUBLIC_ORIGIN ni o'rnating
+cp .env.example .env      # POSTGRES_PASSWORD, SITE_ADDRESS, PUBLIC_ORIGIN
 docker compose up -d --build
 docker compose exec api node dist/create-owner.js --login egasi --name "Ism Familiya"
 ```
 
-API konteyneri har startda migratsiyalarni qo'llaydi. Web (Caddy) `/api` ni API ga proksi qiladi, shuning uchun cookie bir xil domenda qoladi. HTTPS uchun `deploy/Caddyfile` dagi `:80` ni domen nomiga almashtiring.
-
-Backup va tiklash skriptlari 4-qadamda qo'shiladi. Ungacha production ma'lumotlarini `pg_dump` bilan qo'lda zaxiralang.
+API konteyneri har startda migratsiyalarni qo'llaydi. Caddy `SITE_ADDRESS` domeni uchun HTTPS sertifikatini o'zi oladi va `/api` ni API ga proksi qiladi. `backup` konteyneri har kuni 03:00 (Toshkent) da `./backups` ga zaxira yozadi; tiklash: `./deploy/restore.sh backups/<fayl>.dump`.
 
 ## Xavfsizlik
 

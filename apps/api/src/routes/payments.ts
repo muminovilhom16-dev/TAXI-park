@@ -1,10 +1,19 @@
 import { aliasedTable, and, count, desc, eq, inArray, sql } from "drizzle-orm";
 import type { FastifyPluginAsync, FastifyRequest } from "fastify";
 import { z } from "zod";
-import { paymentCreateSchema, paymentListQuerySchema, voidSchema, type PaymentRow } from "@taxi/shared";
+import {
+  formatDateTime,
+  PAYMENT_METHOD_LABELS,
+  paymentCreateSchema,
+  paymentListQuerySchema,
+  tashkentToday,
+  voidSchema,
+  type PaymentRow,
+} from "@taxi/shared";
 import type { Tx } from "../db/client.js";
 import { appSettings, drivers, financialTransactions, users } from "../db/schema/index.js";
 import { writeAudit } from "../lib/audit.js";
+import { EXPORT_LIMIT, moneyCell, sendCsv } from "../lib/csv-export.js";
 import { AppError, conflict, forbidden, notFound, parseInput } from "../lib/errors.js";
 
 const idParams = z.object({ id: z.string().uuid() });
@@ -77,6 +86,49 @@ export const paymentRoutes: FastifyPluginAsync = async (app) => {
       })),
       total: total?.n ?? 0,
     };
+  });
+
+  app.get("/export", { preHandler: [canRead, app.requirePermission("reports.export")] }, async (req, reply) => {
+    const q = parseInput(paymentListQuerySchema, req.query);
+    const creator = aliasedTable(users, "creator");
+    const rows = await app.db
+      .select({
+        t: financialTransactions,
+        driverFirst: drivers.firstName,
+        driverLast: drivers.lastName,
+        creatorName: creator.fullName,
+        approverName: sql<string | null>`(select u.full_name from users u where u.id = ${financialTransactions.approvedBy})`,
+      })
+      .from(financialTransactions)
+      .leftJoin(drivers, eq(drivers.id, financialTransactions.driverId))
+      .innerJoin(creator, eq(creator.id, financialTransactions.createdBy))
+      .where(
+        and(
+          inArray(financialTransactions.type, [...PAYMENT_TYPES]),
+          q.status === "all" ? undefined : eq(financialTransactions.approvalStatus, q.status),
+          q.driverId ? eq(financialTransactions.driverId, q.driverId) : undefined,
+        ),
+      )
+      .orderBy(financialTransactions.occurredAt)
+      .limit(EXPORT_LIMIT);
+    await writeAudit(app.db, req, { action: "report.export", entityType: "transaction", after: { ...q, rows: rows.length } });
+    const STATUS = { pending: "Tasdiq kutilmoqda", approved: "Tasdiqlangan", rejected: "Rad etilgan" } as const;
+    return sendCsv(
+      reply,
+      `tolovlar_${tashkentToday()}.csv`,
+      ["Vaqt", "Haydovchi", "Turi", "Usul", "Summa", "Holat", "Kiritdi", "Tasdiqladi", "Izoh"],
+      rows.map((r) => [
+        formatDateTime(r.t.occurredAt),
+        r.driverLast ? `${r.driverLast} ${r.driverFirst}` : null,
+        r.t.type === "adjustment" ? "To'lovni bekor qilish" : "To'lov",
+        PAYMENT_METHOD_LABELS[r.t.paymentMethod as keyof typeof PAYMENT_METHOD_LABELS] ?? r.t.paymentMethod,
+        moneyCell(r.t.direction === "in" ? r.t.amount : `-${r.t.amount}`),
+        STATUS[r.t.approvalStatus],
+        r.creatorName,
+        r.approverName,
+        r.t.note,
+      ]),
+    );
   });
 
   app.post("/", { preHandler: canWrite }, async (req, reply) => {

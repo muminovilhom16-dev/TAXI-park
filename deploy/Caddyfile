@@ -1,6 +1,9 @@
 # Serves the web app and proxies the API on the same origin, so the session
-# cookie stays first-party. Put a real domain instead of :80 to get HTTPS.
-:80 {
+# cookie stays first-party. SITE_ADDRESS is the domain (e.g. park.example.uz):
+# Caddy then gets and renews the HTTPS certificate itself. Without it the site
+# answers plain HTTP on :80, which is only for a local trial: production
+# cookies are Secure and need HTTPS to log in.
+{$SITE_ADDRESS::80} {
 	encode gzip
 	handle /api/* {
 		reverse_proxy api:3000
@@ -11,6 +14,7 @@
 		file_server
 	}
 	header {
+		Strict-Transport-Security "max-age=31536000"
 		X-Content-Type-Options nosniff
 		Referrer-Policy strict-origin-when-cross-origin
 		X-Frame-Options DENY
