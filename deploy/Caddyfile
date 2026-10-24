@@ -1,0 +1,19 @@
+# Serves the web app and proxies the API on the same origin, so the session
+# cookie stays first-party. Put a real domain instead of :80 to get HTTPS.
+:80 {
+	encode gzip
+	handle /api/* {
+		reverse_proxy api:3000
+	}
+	handle {
+		root * /srv
+		try_files {path} /index.html
+		file_server
+	}
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		X-Frame-Options DENY
+		Content-Security-Policy "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'"
+	}
+}
