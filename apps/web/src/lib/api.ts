@@ -5,14 +5,18 @@ export class ApiRequestError extends Error {
     readonly status: number,
     readonly code: string,
     message: string,
-    readonly details?: { path: string; message: string }[],
+    // Field issues for validation errors; other shapes (e.g. duplicate matches) for conflicts.
+    readonly details?: unknown,
   ) {
     super(message);
   }
 
   /** Field errors keyed by path, for forms. */
   fieldErrors(): Record<string, string> {
-    return Object.fromEntries((this.details ?? []).map((d) => [d.path, d.message]));
+    if (!Array.isArray(this.details)) return {};
+    return Object.fromEntries(
+      (this.details as { path: string; message: string }[]).map((d) => [d.path, d.message]),
+    );
   }
 }
 
@@ -21,7 +25,7 @@ export const setCsrfToken = (token: string | null) => {
   csrfToken = token;
 };
 
-type Options = { method?: "GET" | "POST" | "PATCH" | "DELETE"; body?: unknown; query?: Record<string, unknown> };
+type Options = { method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE"; body?: unknown; query?: Record<string, unknown> };
 
 export async function api<T>(path: string, opts: Options = {}): Promise<T> {
   const url = new URL(`/api${path}`, window.location.origin);
@@ -51,7 +55,7 @@ export async function api<T>(path: string, opts: Options = {}): Promise<T> {
     res.status,
     payload?.error.code ?? "unknown",
     payload?.error.message ?? `Xato: ${res.status}`,
-    payload?.error.details as ApiRequestError["details"],
+    payload?.error.details,
   );
 }
 

@@ -52,3 +52,9 @@ export function normalizeUzPhone(input: string): string | null {
   if (digits.length === 12 && digits.startsWith("998")) return `+${digits}`;
   return null;
 }
+
+/** A calendar date "2026-10-24" as "24.10.2026", with no timezone shift. */
+export function formatDay(isoDate: string): string {
+  const [y, m, d] = isoDate.slice(0, 10).split("-");
+  return `${d}.${m}.${y}`;
+}

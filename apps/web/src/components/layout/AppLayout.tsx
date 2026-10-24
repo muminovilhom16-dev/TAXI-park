@@ -1,18 +1,27 @@
 import type { Permission } from "@taxi/shared";
-import { CarTaxiFront, Home, LogOut, Menu, ScrollText, UserCircle, Users, X } from "lucide-react";
+import { Building2, Car, CarTaxiFront, Contact, Home, LogOut, Menu, ScrollText, UserCircle, Users, X } from "lucide-react";
 import { useState, type ComponentType } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 
-type NavItem = { to: string; label: string; icon: ComponentType<{ className?: string }>; perm?: Permission };
+type NavItem = {
+  to: string;
+  label: string;
+  icon: ComponentType<{ className?: string }>;
+  // Shown when the user holds any of these.
+  perms?: Permission[];
+};
 
 // Only modules that work are listed; later modules appear as they ship.
 export const NAV: NavItem[] = [
   { to: "/", label: "Bosh sahifa", icon: Home },
-  { to: "/users", label: "Xodimlar", icon: Users, perm: "users.manage" },
-  { to: "/audit", label: "Audit tarixi", icon: ScrollText, perm: "audit.read" },
+  { to: "/drivers", label: "Haydovchilar", icon: Contact, perms: ["drivers.read_all", "drivers.read_assigned"] },
+  { to: "/vehicles", label: "Avtomobillar", icon: Car, perms: ["drivers.read_all"] },
+  { to: "/aggregators", label: "Agregatorlar", icon: Building2, perms: ["aggregators.manage", "drivers.read_all"] },
+  { to: "/users", label: "Xodimlar", icon: Users, perms: ["users.manage"] },
+  { to: "/audit", label: "Audit tarixi", icon: ScrollText, perms: ["audit.read"] },
   { to: "/profile", label: "Profil", icon: UserCircle },
 ];
 
@@ -21,7 +30,7 @@ export function AppLayout() {
   const [open, setOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const items = NAV.filter((n) => !n.perm || can(n.perm));
+  const items = NAV.filter((n) => !n.perms || n.perms.some((p) => can(p)));
   const current = items.find((n) => (n.to === "/" ? location.pathname === "/" : location.pathname.startsWith(n.to)));
 
   const nav = (

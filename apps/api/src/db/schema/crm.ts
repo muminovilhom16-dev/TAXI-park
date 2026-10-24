@@ -131,7 +131,10 @@ export const aggregatorDriverAccounts = pgTable(
     ...timestamps(),
   },
   (t) => [
+    // An external id identifies one person for good, even after unlinking.
     uniqueIndex("ada_external_uq").on(t.aggregatorId, t.externalDriverId),
+    // A driver has at most one live account per aggregator.
+    uniqueIndex("ada_driver_live_uq").on(t.aggregatorId, t.driverId).where(sql`${t.unlinkedAt} is null`),
     index("ada_driver_idx").on(t.driverId),
   ],
 );

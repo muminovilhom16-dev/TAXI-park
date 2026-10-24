@@ -9,6 +9,7 @@
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
+    "test:e2e": "pnpm --filter @taxi/web test:e2e",
     "db:generate": "pnpm --filter @taxi/api db:generate",
     "db:migrate": "pnpm --filter @taxi/api db:migrate",
     "db:seed": "pnpm --filter @taxi/api db:seed",

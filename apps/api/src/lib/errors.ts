@@ -31,6 +31,12 @@ export function parseInput<S extends ZodType>(schema: S, data: unknown): z.infer
   return result.data;
 }
 
+/** Postgres exclusion-constraint violation (overlapping ranges). */
+export function isExclusionViolation(err: unknown): boolean {
+  const cause = (err as { cause?: { code?: string } })?.cause ?? err;
+  return (cause as { code?: string })?.code === "23P01";
+}
+
 /** Postgres unique violation, optionally on a named constraint or index. */
 export function isUniqueViolation(err: unknown, constraint?: string): boolean {
   const cause = (err as { cause?: { code?: string; constraint_name?: string } })?.cause ?? err;
