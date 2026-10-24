@@ -35,6 +35,17 @@ const ACTION_LABELS: Record<string, string> = {
   "aggregator.create": "Agregator qo'shildi",
   "aggregator.update": "Agregator o'zgartirildi",
   "aggregator.money_flow_change": "Pul oqimi modeli o'zgardi",
+  "commission_policy.create": "Komissiya stavkasi belgilandi",
+  "settings.finance_update": "Moliya sozlamalari o'zgardi",
+  "earning.create": "Kunlik tushum kiritildi",
+  "earning.import": "Tushum CSV'dan yuklandi",
+  "earning.void": "Kunlik tushum bekor qilindi",
+  "subscription.accrue": "Obuna hisoblandi",
+  "charge.void": "Hisoblangan summa bekor qilindi",
+  "payment.create": "To'lov kiritildi",
+  "payment.approve": "To'lov tasdiqlandi",
+  "payment.reject": "To'lov rad etildi",
+  "payment.reverse": "To'lov bekor qilindi",
 };
 
 const RESULT: Record<AuditLogRow["result"], { label: string; tone: "success" | "warning" | "danger" }> = {

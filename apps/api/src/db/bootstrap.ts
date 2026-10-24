@@ -17,6 +17,11 @@ export const DEFAULT_SETTINGS: Record<string, unknown> = {
   // No threshold until the owner sets one.
   "debt.alert_threshold": { amount: null },
   "finance.require_separate_approver": true,
+  // Unknown until the owner sets them; subscription accrual stays off until then.
+  "subscription.daily_amount": { amount: null },
+  "subscription.charge_mode": { mode: null },
+  // The owner's stated rule: the aggregator withholds the commission, so it never becomes debt.
+  "commission.collection": { mode: "withheld" },
 };
 
 /**

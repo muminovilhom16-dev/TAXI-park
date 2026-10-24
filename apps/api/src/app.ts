@@ -14,7 +14,10 @@ import { aggregatorRoutes } from "./routes/aggregators.js";
 import { commissionRoutes } from "./routes/commission.js";
 import { dashboardRoutes } from "./routes/dashboard.js";
 import { driverRoutes } from "./routes/drivers.js";
+import { earningRoutes } from "./routes/earnings.js";
+import { financeRoutes } from "./routes/finance.js";
 import { healthRoutes } from "./routes/health.js";
+import { paymentRoutes } from "./routes/payments.js";
 import { roleRoutes } from "./routes/roles.js";
 import { userRoutes } from "./routes/users.js";
 import { vehicleRoutes } from "./routes/vehicles.js";
@@ -128,6 +131,9 @@ export async function buildApp(deps: { db: Db; env: Env }) {
   await app.register(aggregatorRoutes, { prefix: "/api/aggregators" });
   await app.register(vehicleRoutes, { prefix: "/api/vehicles" });
   await app.register(dashboardRoutes, { prefix: "/api/dashboard" });
+  await app.register(earningRoutes, { prefix: "/api/earnings" });
+  await app.register(paymentRoutes, { prefix: "/api/payments" });
+  await app.register(financeRoutes, { prefix: "/api/finance" });
 
   return app;
 }

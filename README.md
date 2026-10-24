@@ -11,7 +11,8 @@ O'zbekistondagi taksi parklari uchun boshqaruv tizimi: haydovchilar, agregator h
 | Xodimlarni boshqarish | Tayyor |
 | Audit log | Tayyor |
 | Haydovchilar CRM, avtomobillar, agregatorlar, CRM ko'rsatkichlari | Tayyor |
-| Excel/CSV import, komissiya, settlement, to'lovlar | 3-qadam (real agregator hisoboti kerak) |
+| Kunlik tushum (qo'lda va CSV), komissiya, kunlik obuna, qarz, to'lovlar | Tayyor |
+| Real agregator hisobotini to'g'ridan-to'g'ri import qilish | Hisobot namunasi kerak |
 | Dashboard, hisobotlar, eksport, bildirishnomalar | 4-qadam |
 
 Moliyaviy tushunchalar va qoidalar: [docs/finance-model.md](docs/finance-model.md).

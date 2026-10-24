@@ -2,6 +2,34 @@
 
 Bu hujjat tizimdagi pul tushunchalari nimani anglatishini belgilaydi. Kod va hisobotlar shu ta'riflarga tayanadi. Yangi tranzaksiya turi qo'shilsa, avval shu hujjat yangilanadi.
 
+## Hozir ishlayotgan kunlik model (2026-10-24)
+
+Park egasi bergan qoidalar:
+
+- Park daromadi: haydovchining kunlik tushumidan 10% komissiya. Stavka sozlamada, agregator bo'yicha va sanadan boshlab belgilanadi.
+- Hisob-kitob kunlik.
+- Haydovchiga kunlik obuna yoziladi. Faqat obuna qarzga aylanishi mumkin.
+- Komissiyani agregator o'zi ushlab qoladi, shuning uchun u qarzga aylanmaydi. Bu tasdiqlanmagan: agregator shartnomasida tekshirilishi kerak. Shuning uchun `commission.collection` sozlamasi bor (`withheld` yoki `driver_pays`).
+
+| Obyekt | Jadval | Ma'nosi |
+| --- | --- | --- |
+| Kunlik tushum | `daily_earnings` | Bir haydovchining bir agregatordagi bir kunlik tushumi. Komissiya kiritilgan paytda hisoblanadi va stavka bilan birga muzlatiladi. |
+| Hisoblangan summa | `driver_charges` | Haydovchi parkka qarzdor bo'lgan summa: kunlik obuna (`subscription`), komissiya (faqat `driver_pays` rejimida) yoki boshqa (`other`). |
+| To'lov | `financial_transactions` (`driver_other_payment_in`) | Haydovchi to'lagan pul. Boshqa xodim tasdiqlagandan keyingina hisobga olinadi. |
+
+**Qarz (qoldiq)** = faol hisoblangan summalar − tasdiqlangan to'lovlar. Bekor qilingan to'lov `adjustment` (`out`) sifatida qarzga qaytadi. Qoldiq hech qayerda saqlanmaydi, har safar hisoblanadi. Manfiy qoldiq oldindan to'lov (haqdorlik) degani.
+
+**Komissiya** = `tushum × stavka / 100`, butun so'mgacha half-up yaxlitlanadi (`money.rounding`). Hisob BigInt'da, tiyinlarda bajariladi, float ishlatilmaydi.
+
+**Obuna** (`subscription.daily_amount`, `subscription.charge_mode`). Egasi summa va tartibni kiritmaguncha o'chiq turadi.
+- `every_active_day`: CRM holati "Faol" bo'lgan, arxivda bo'lmagan, ro'yxatdan o'tgan kuni shu kundan oldin yoki shu kun bo'lgan har bir haydovchiga yoziladi. Server buni har soatda bugungi kun uchun avtomatik bajaradi. O'tgan kunlar uchun buxgalter qo'lda hisoblaydi. Holat sana bo'yicha emas, hozirgi holatdan olinadi.
+- `worked_days_only`: o'sha kun uchun tushum kiritilganda yoziladi. Tushum bekor qilinsa va shu kunda boshqa tushum qolmasa, obuna ham bekor qilinadi.
+- Bir haydovchiga bir kunda faqat bitta faol obuna yoziladi (unique index). Shuning uchun qayta ishga tushirish yoki parallel ishga tushirish xavfsiz.
+
+**Tuzatish.** Tushum va hisoblangan summalar o'chirilmaydi va o'zgartirilmaydi (trigger). Xato bo'lsa, egasi sabab yozib bekor qiladi va to'g'risi qaytadan kiritiladi.
+
+Quyidagi bo'limlardagi settlement va import jadvallari agregator hisobotlari uchun tayyorlangan. Real hisobot fayli kelguncha ular ishlatilmaydi.
+
 ## Uchta asosiy obyekt
 
 | Obyekt | Jadval | Nimani ifodalaydi |
