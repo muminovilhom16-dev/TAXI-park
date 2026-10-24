@@ -10,10 +10,14 @@ import { writeAudit } from "./lib/audit.js";
 import { AppError, forbidden, unauthorized } from "./lib/errors.js";
 import { auditRoutes } from "./routes/audit.js";
 import { authRoutes } from "./routes/auth.js";
+import { aggregatorRoutes } from "./routes/aggregators.js";
 import { commissionRoutes } from "./routes/commission.js";
+import { dashboardRoutes } from "./routes/dashboard.js";
+import { driverRoutes } from "./routes/drivers.js";
 import { healthRoutes } from "./routes/health.js";
 import { roleRoutes } from "./routes/roles.js";
 import { userRoutes } from "./routes/users.js";
+import { vehicleRoutes } from "./routes/vehicles.js";
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -22,6 +26,7 @@ declare module "fastify" {
     sessionCookie: string;
     requireAuth: (req: FastifyRequest) => Promise<void>;
     requirePermission: (...perms: Permission[]) => (req: FastifyRequest) => Promise<void>;
+    requireAnyPermission: (...perms: Permission[]) => (req: FastifyRequest) => Promise<void>;
   }
   interface FastifyRequest {
     auth: AuthContext | null;
@@ -72,20 +77,23 @@ export async function buildApp(deps: { db: Db; env: Env }) {
     if (!req.auth) throw unauthorized();
   });
 
-  app.decorate("requirePermission", (...perms: Permission[]) => async (req: FastifyRequest) => {
+  const guard = (mode: "all" | "any", perms: Permission[]) => async (req: FastifyRequest) => {
     if (!req.auth) throw unauthorized();
     const granted = req.auth.user.permissions;
-    if (!perms.every((p) => granted.includes(p))) {
+    const ok = mode === "all" ? perms.every((p) => granted.includes(p)) : perms.some((p) => granted.includes(p));
+    if (!ok) {
       await writeAudit(app.db, req, {
         action: "access.denied",
         entityType: "endpoint",
         entityId: `${req.method} ${req.routeOptions.url ?? req.url}`,
         result: "denied",
-        after: { required: perms },
+        after: { required: perms, mode },
       });
       throw forbidden();
     }
-  });
+  };
+  app.decorate("requirePermission", (...perms: Permission[]) => guard("all", perms));
+  app.decorate("requireAnyPermission", (...perms: Permission[]) => guard("any", perms));
 
   app.setErrorHandler((err, req, reply: FastifyReply) => {
     if (err instanceof AppError) {
@@ -116,6 +124,10 @@ export async function buildApp(deps: { db: Db; env: Env }) {
   await app.register(roleRoutes, { prefix: "/api/roles" });
   await app.register(auditRoutes, { prefix: "/api/audit-logs" });
   await app.register(commissionRoutes, { prefix: "/api/commission-policies" });
+  await app.register(driverRoutes, { prefix: "/api/drivers" });
+  await app.register(aggregatorRoutes, { prefix: "/api/aggregators" });
+  await app.register(vehicleRoutes, { prefix: "/api/vehicles" });
+  await app.register(dashboardRoutes, { prefix: "/api/dashboard" });
 
   return app;
 }

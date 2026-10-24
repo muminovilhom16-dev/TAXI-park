@@ -4,11 +4,15 @@ import { Link, Navigate, Route, Routes, useLocation } from "react-router";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Loading } from "@/components/ui/data-state";
 import { useAuth } from "@/lib/auth";
+import { AggregatorsPage } from "@/pages/AggregatorsPage";
 import { AuditPage } from "@/pages/AuditPage";
+import { DriverPage } from "@/pages/DriverPage";
+import { DriversPage } from "@/pages/DriversPage";
 import { HomePage } from "@/pages/HomePage";
 import { LoginPage } from "@/pages/LoginPage";
 import { ProfilePage } from "@/pages/ProfilePage";
 import { UsersPage } from "@/pages/UsersPage";
+import { VehiclesPage } from "@/pages/VehiclesPage";
 
 function RequireAuth({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
@@ -18,9 +22,10 @@ function RequireAuth({ children }: { children: ReactNode }) {
   return children;
 }
 
-function RequirePermission({ perm, children }: { perm: Permission; children: ReactNode }) {
+function RequirePermission({ perm, children }: { perm: Permission | Permission[]; children: ReactNode }) {
   const { can } = useAuth();
-  return can(perm) ? children : <Message title="Ruxsat yo'q" text="Bu sahifani ko'rish uchun ruxsatingiz yo'q." />;
+  const ok = (Array.isArray(perm) ? perm : [perm]).some((p) => can(p));
+  return ok ? children : <Message title="Ruxsat yo'q" text="Bu sahifani ko'rish uchun ruxsatingiz yo'q." />;
 }
 
 function Message({ title, text }: { title: string; text: string }) {
@@ -47,6 +52,38 @@ export function App() {
         }
       >
         <Route index element={<HomePage />} />
+        <Route
+          path="drivers"
+          element={
+            <RequirePermission perm={["drivers.read_all", "drivers.read_assigned"]}>
+              <DriversPage />
+            </RequirePermission>
+          }
+        />
+        <Route
+          path="drivers/:id"
+          element={
+            <RequirePermission perm={["drivers.read_all", "drivers.read_assigned"]}>
+              <DriverPage />
+            </RequirePermission>
+          }
+        />
+        <Route
+          path="vehicles"
+          element={
+            <RequirePermission perm="drivers.read_all">
+              <VehiclesPage />
+            </RequirePermission>
+          }
+        />
+        <Route
+          path="aggregators"
+          element={
+            <RequirePermission perm={["aggregators.manage", "drivers.read_all"]}>
+              <AggregatorsPage />
+            </RequirePermission>
+          }
+        />
         <Route
           path="users"
           element={

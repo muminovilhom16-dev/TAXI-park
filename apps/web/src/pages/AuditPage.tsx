@@ -20,6 +20,21 @@ const ACTION_LABELS: Record<string, string> = {
   "user.update": "Xodim o'zgartirildi",
   "user.reset_password": "Parol tiklandi",
   "access.denied": "Ruxsatsiz urinish",
+  "driver.create": "Haydovchi qo'shildi",
+  "driver.update": "Haydovchi o'zgartirildi",
+  "driver.status_change": "Haydovchi holati o'zgardi",
+  "driver.archive": "Haydovchi arxivlandi",
+  "driver.unarchive": "Haydovchi arxivdan chiqarildi",
+  "driver.account_link": "Agregator ID bog'landi",
+  "driver.account_unlink": "Agregator ID uzildi",
+  "driver.vehicle_assign": "Avtomobil biriktirildi",
+  "driver.vehicle_unassign": "Avtomobil bo'shatildi",
+  "vehicle.create": "Avtomobil qo'shildi",
+  "vehicle.update": "Avtomobil o'zgartirildi",
+  "vehicle.archive": "Avtomobil arxivlandi",
+  "aggregator.create": "Agregator qo'shildi",
+  "aggregator.update": "Agregator o'zgartirildi",
+  "aggregator.money_flow_change": "Pul oqimi modeli o'zgardi",
 };
 
 const RESULT: Record<AuditLogRow["result"], { label: string; tone: "success" | "warning" | "danger" }> = {

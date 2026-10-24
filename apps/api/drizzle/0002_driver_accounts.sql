@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "ada_driver_live_uq" ON "aggregator_driver_accounts" USING btree ("aggregator_id","driver_id") WHERE "aggregator_driver_accounts"."unlinked_at" is null;

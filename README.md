@@ -10,7 +10,7 @@ O'zbekistondagi taksi parklari uchun boshqaruv tizimi: haydovchilar, agregator h
 | Login, sessiyalar, rollar va ruxsatlar (server tomonida) | Tayyor |
 | Xodimlarni boshqarish | Tayyor |
 | Audit log | Tayyor |
-| Haydovchilar CRM, avtomobillar, agregatorlar | 2-qadam |
+| Haydovchilar CRM, avtomobillar, agregatorlar, CRM ko'rsatkichlari | Tayyor |
 | Excel/CSV import, komissiya, settlement, to'lovlar | 3-qadam (real agregator hisoboti kerak) |
 | Dashboard, hisobotlar, eksport, bildirishnomalar | 4-qadam |
 
@@ -48,9 +48,12 @@ pnpm create-owner --login egasi --name "Ism Familiya"   # parolni so'raydi
 ```bash
 pnpm test        # TEST_DATABASE_URL dagi bazani o'chirib, migratsiyalardan qayta quradi
 pnpm typecheck
+pnpm test:e2e    # brauzer testlari (Playwright, kompyuter va telefon ekrani)
 ```
 
 API testlari mock emas, haqiqiy PostgreSQL bilan ishlaydi. Ular ruxsatlar matritsasini (5 rol × endpointlar, shu jumladan qabul testi 7), sessiya xavfsizligini (CSRF, Origin, rate limit, sessiyani bekor qilish) va database darajasidagi moliyaviy kafolatlarni (o'zgarmas settlementlar, parallel to'lov taqsimlash, takroriy import) tekshiradi.
+
+Brauzer testlari `E2E_DATABASE_URL` (standart: `taxi_e2e`) bazasini har safar o'chirib qayta yaratadi, shuning uchun baza nomida `e2e` bo'lishi shart. Postgres foydalanuvchisiga `CREATEDB` huquqi kerak. Chromium birinchi marta: `pnpm --filter @taxi/web exec playwright install chromium`.
 
 ## Database migratsiyalari
 

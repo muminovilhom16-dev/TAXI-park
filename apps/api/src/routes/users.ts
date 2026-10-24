@@ -109,6 +109,17 @@ export const userRoutes: FastifyPluginAsync = async (app) => {
     return { items: rows.map(toRow), total: total?.n ?? 0, page: q.page, pageSize: q.pageSize };
   });
 
+  // Lightweight list for pickers (e.g. a driver's manager).
+  app.get("/options", { preHandler: app.requireAnyPermission("users.manage", "drivers.read_all") }, async () => {
+    const rows = await app.db
+      .select({ id: users.id, fullName: users.fullName, roleCode: roles.code })
+      .from(users)
+      .innerJoin(roles, eq(roles.id, users.roleId))
+      .where(eq(users.isActive, true))
+      .orderBy(asc(users.fullName));
+    return { items: rows };
+  });
+
   app.post("/", { preHandler: canManage }, async (req, reply) => {
     const input = parseInput(createUserSchema, req.body);
     const passwordHash = await hashPassword(input.password);
