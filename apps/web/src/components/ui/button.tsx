@@ -24,11 +24,18 @@ type Props = ButtonHTMLAttributes<HTMLButtonElement> &
   VariantProps<typeof buttonVariants> & { asChild?: boolean; loading?: boolean };
 
 export function Button({ className, variant, size, asChild, loading, children, disabled, ...props }: Props) {
-  const Comp = asChild ? Slot : "button";
+  // Slot needs exactly one child, so the spinner is only for real buttons.
+  if (asChild) {
+    return (
+      <Slot className={cn(buttonVariants({ variant, size }), className)} {...props}>
+        {children}
+      </Slot>
+    );
+  }
   return (
-    <Comp className={cn(buttonVariants({ variant, size }), className)} disabled={disabled || loading} {...props}>
+    <button className={cn(buttonVariants({ variant, size }), className)} disabled={disabled || loading} {...props}>
       {loading && <Loader2 className="h-4 w-4 animate-spin" aria-hidden />}
       {children}
-    </Comp>
+    </button>
   );
 }

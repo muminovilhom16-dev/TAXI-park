@@ -4,7 +4,7 @@ import { Check, Undo2, Wallet, X } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router";
 import { toast } from "sonner";
-import { Money, PaymentDialog, ReasonDialog, useInvalidateFinance } from "@/components/finance";
+import { ExportButton, Money, PaymentDialog, ReasonDialog, useInvalidateFinance } from "@/components/finance";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -58,11 +58,14 @@ export function PaymentsPage() {
           <option value="rejected">Rad etilgan</option>
           <option value="all">Hammasi</option>
         </Select>
-        {can("payments.write") && (
-          <Button className="sm:ml-auto" onClick={() => setCreating(true)}>
-            <Wallet className="h-4 w-4" /> To'lov qabul qilish
-          </Button>
-        )}
+        <div className="flex flex-wrap gap-2 sm:ml-auto">
+          <ExportButton path="/payments/export" query={{ status }} />
+          {can("payments.write") && (
+            <Button onClick={() => setCreating(true)}>
+              <Wallet className="h-4 w-4" /> To'lov qabul qilish
+            </Button>
+          )}
+        </div>
       </div>
       <Card className="overflow-hidden">
         {list.isPending ? (

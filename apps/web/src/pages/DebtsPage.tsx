@@ -4,7 +4,7 @@ import { Wallet } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router";
 import { formatPhone } from "@/components/crm";
-import { Money, PaymentDialog } from "@/components/finance";
+import { ExportButton, Money, PaymentDialog } from "@/components/finance";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Empty, ErrorState, Loading } from "@/components/ui/data-state";
@@ -42,6 +42,7 @@ export function DebtsPage() {
             <option value="false">Faqat qarzdorlar</option>
             <option value="true">Hisobi bor barcha haydovchilar</option>
           </Select>
+          <ExportButton path="/finance/debts/export" query={{ all }} />
           {can("payments.write") && (
             <Button onClick={() => setPaying(null)}>
               <Wallet className="h-4 w-4" /> To'lov qabul qilish

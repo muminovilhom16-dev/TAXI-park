@@ -4,6 +4,10 @@ import { z } from "zod";
 import {
   accrueSchema,
   CHARGE_KIND_LABELS,
+  CRM_STATUS_LABELS,
+  formatDay,
+  tashkentToday,
+  type CrmStatus,
   financeSettingsSchema,
   PAYMENT_METHOD_LABELS,
   voidSchema,
@@ -13,6 +17,7 @@ import {
 } from "@taxi/shared";
 import { aggregators, appSettings, dailyEarnings, driverCharges, drivers, financialTransactions } from "../db/schema/index.js";
 import { writeAudit } from "../lib/audit.js";
+import { moneyCell, phoneCell, sendCsv } from "../lib/csv-export.js";
 import { conflict, notFound, parseInput } from "../lib/errors.js";
 import { accrueSubscriptions, balancesSql, getFinanceSettings } from "../services/finance.js";
 
@@ -85,9 +90,7 @@ export const financeRoutes: FastifyPluginAsync = async (app) => {
     });
   });
 
-  // Drivers who owe the park, largest debt first. ?all=true includes zero and credit balances.
-  app.get("/debts", { preHandler: canRead }, async (req): Promise<{ items: DebtRow[]; totalDebt: string }> => {
-    const q = parseInput(debtQuery, req.query);
+  async function loadDebts(all: boolean) {
     const rows = await app.db.execute<
       BalanceRow & { first_name: string; last_name: string; phone: string; crm_status: string; archived: boolean; oldest: string | null }
     >(sql`
@@ -95,28 +98,57 @@ export const financeRoutes: FastifyPluginAsync = async (app) => {
         (select min(c.charge_date)::text from driver_charges c where c.driver_id = d.id and c.status = 'active') as oldest
       from (${balancesSql()}) b
       join drivers d on d.id = b.driver_id
-      where ${q.all === "true" ? sql`(b.charged > 0 or b.paid <> 0 or b.pending > 0)` : sql`b.balance > 0`}
+      where ${all ? sql`(b.charged > 0 or b.paid <> 0 or b.pending > 0)` : sql`b.balance > 0`}
       order by b.balance desc, d.last_name
     `);
-    const items: DebtRow[] = rows.map((r) => ({
-      driver: {
-        id: r.driver_id,
-        fullName: `${r.last_name} ${r.first_name}`,
-        phone: r.phone,
-        crmStatus: r.crm_status,
-        archived: r.archived,
-      },
-      charged: r.charged,
-      paid: r.paid,
-      balance: r.balance,
-      pendingPayments: r.pending,
-      // Oldest charge date as a rough "since when"; payments are not matched to days.
-      oldestUnpaidDate: Number(r.balance) > 0 ? r.oldest : null,
-    }));
+    return rows.map(
+      (r): DebtRow => ({
+        driver: {
+          id: r.driver_id,
+          fullName: `${r.last_name} ${r.first_name}`,
+          phone: r.phone,
+          crmStatus: r.crm_status,
+          archived: r.archived,
+        },
+        charged: r.charged,
+        paid: r.paid,
+        balance: r.balance,
+        pendingPayments: r.pending,
+        // Oldest charge date as a rough "since when"; payments are not matched to days.
+        oldestUnpaidDate: Number(r.balance) > 0 ? r.oldest : null,
+      }),
+    );
+  }
+
+  // Drivers who owe the park, largest debt first. ?all=true includes zero and credit balances.
+  app.get("/debts", { preHandler: canRead }, async (req): Promise<{ items: DebtRow[]; totalDebt: string }> => {
+    const q = parseInput(debtQuery, req.query);
+    const items = await loadDebts(q.all === "true");
     const [sum] = await app.db.execute<{ total: string }>(
       sql`select coalesce(sum(balance) filter (where balance > 0), 0)::numeric(18,2) as total from (${balancesSql()}) b`,
     );
     return { items, totalDebt: sum?.total ?? "0.00" };
+  });
+
+  app.get("/debts/export", { preHandler: [canRead, app.requirePermission("reports.export")] }, async (req, reply) => {
+    const q = parseInput(debtQuery, req.query);
+    const items = await loadDebts(q.all === "true");
+    await writeAudit(app.db, req, { action: "report.export", entityType: "debts", after: { all: q.all, rows: items.length } });
+    return sendCsv(
+      reply,
+      `qarzlar_${tashkentToday()}.csv`,
+      ["Haydovchi", "Telefon", "Holat", "Hisoblangan", "To'langan", "Qoldiq", "Tasdiq kutmoqda", "Eng eski hisob"],
+      items.map((d) => [
+        d.driver.fullName,
+        phoneCell(d.driver.phone),
+        CRM_STATUS_LABELS[d.driver.crmStatus as CrmStatus] + (d.driver.archived ? " (arxiv)" : ""),
+        moneyCell(d.charged),
+        moneyCell(d.paid),
+        moneyCell(d.balance),
+        moneyCell(d.pendingPayments),
+        d.oldestUnpaidDate ? formatDay(d.oldestUnpaidDate) : null,
+      ]),
+    );
   });
 
   app.get("/drivers/:id", { preHandler: canRead }, async (req): Promise<DriverFinance> => {

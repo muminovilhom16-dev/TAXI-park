@@ -61,3 +61,12 @@ export async function api<T>(path: string, opts: Options = {}): Promise<T> {
 
 export const errorMessage = (err: unknown) =>
   err instanceof Error ? err.message : "Noma'lum xato yuz berdi";
+
+/** URL of a GET endpoint for a plain link (CSV downloads ride on the session cookie). */
+export function apiUrl(path: string, query: Record<string, unknown> = {}) {
+  const url = new URL(`/api${path}`, window.location.origin);
+  for (const [k, v] of Object.entries(query)) {
+    if (v !== undefined && v !== null && v !== "") url.searchParams.set(k, String(v));
+  }
+  return url.pathname + url.search;
+}

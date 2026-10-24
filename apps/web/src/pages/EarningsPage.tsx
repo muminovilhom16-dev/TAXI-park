@@ -12,6 +12,7 @@ import { Link } from "react-router";
 import { toast } from "sonner";
 import {
   DriverPicker,
+  ExportButton,
   Money,
   ReasonDialog,
   todayIso,
@@ -80,6 +81,7 @@ export function EarningsPage() {
           <option value="all">Hammasi</option>
         </Select>
         <div className="flex flex-wrap gap-2 sm:ml-auto">
+          <ExportButton path="/earnings/export" query={{ from, to, aggregatorId, status }} />
           {can("settlements.prepare") && settings.data?.subscriptionEnabled && (
             <Button variant="secondary" onClick={() => setDialog("accrue")}>
               <CalendarCheck className="h-4 w-4" /> Obunani hisoblash
