@@ -7,19 +7,23 @@ export function Dialog({
   onOpenChange,
   title,
   description,
+  wide,
   children,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: string;
   description?: string;
+  wide?: boolean;
   children: ReactNode;
 }) {
   return (
     <D.Root open={open} onOpenChange={onOpenChange}>
       <D.Portal>
         <D.Overlay className="fixed inset-0 z-40 bg-black/40" />
-        <D.Content className="fixed inset-x-4 top-[10vh] z-50 mx-auto max-w-lg rounded-lg border border-border bg-surface p-5 shadow-lg focus:outline-none">
+        <D.Content
+          className={`fixed inset-x-4 top-[8vh] z-50 mx-auto max-h-[84vh] overflow-y-auto ${wide ? "max-w-3xl" : "max-w-lg"} rounded-lg border border-border bg-surface p-5 shadow-lg focus:outline-none`}
+        >
           <div className="mb-4 flex items-start justify-between gap-4">
             <div>
               <D.Title className="text-base font-semibold">{title}</D.Title>

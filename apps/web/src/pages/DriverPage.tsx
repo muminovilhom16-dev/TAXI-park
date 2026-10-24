@@ -16,6 +16,7 @@ import { Link, useParams } from "react-router";
 import { toast } from "sonner";
 import { CrmStatusBadge, formatPhone, formatPlate, LicenseBadge } from "@/components/crm";
 import { DriverFormDialog } from "@/components/DriverFormDialog";
+import { DriverFinanceCard } from "@/components/DriverFinanceCard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -232,9 +233,7 @@ export function DriverPage() {
         </Card>
       </div>
 
-      <p className="text-xs text-muted">
-        Moliyaviy tarix (hisob-kitoblar, to'lovlar, qarz) hisobot importi qo'shilgandan keyin shu yerda ko'rinadi.
-      </p>
+      {can("finance.read") && <DriverFinanceCard driver={{ id: d.id, fullName: `${d.lastName} ${d.firstName}` }} />}
 
       {dialog === "edit" && (
         <DriverFormDialog open driver={d} onClose={() => setDialog(null)} onSaved={(x) => qc.setQueryData(["driver", id], x)} />

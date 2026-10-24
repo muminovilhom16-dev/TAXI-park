@@ -7,9 +7,13 @@ import { useAuth } from "@/lib/auth";
 import { AggregatorsPage } from "@/pages/AggregatorsPage";
 import { AuditPage } from "@/pages/AuditPage";
 import { DriverPage } from "@/pages/DriverPage";
+import { DebtsPage } from "@/pages/DebtsPage";
 import { DriversPage } from "@/pages/DriversPage";
+import { EarningsPage } from "@/pages/EarningsPage";
+import { FinanceSettingsPage } from "@/pages/FinanceSettingsPage";
 import { HomePage } from "@/pages/HomePage";
 import { LoginPage } from "@/pages/LoginPage";
+import { PaymentsPage } from "@/pages/PaymentsPage";
 import { ProfilePage } from "@/pages/ProfilePage";
 import { UsersPage } from "@/pages/UsersPage";
 import { VehiclesPage } from "@/pages/VehiclesPage";
@@ -81,6 +85,38 @@ export function App() {
           element={
             <RequirePermission perm={["aggregators.manage", "drivers.read_all"]}>
               <AggregatorsPage />
+            </RequirePermission>
+          }
+        />
+        <Route
+          path="earnings"
+          element={
+            <RequirePermission perm="finance.read">
+              <EarningsPage />
+            </RequirePermission>
+          }
+        />
+        <Route
+          path="debts"
+          element={
+            <RequirePermission perm="finance.read">
+              <DebtsPage />
+            </RequirePermission>
+          }
+        />
+        <Route
+          path="payments"
+          element={
+            <RequirePermission perm="finance.read">
+              <PaymentsPage />
+            </RequirePermission>
+          }
+        />
+        <Route
+          path="finance-settings"
+          element={
+            <RequirePermission perm="finance.read">
+              <FinanceSettingsPage />
             </RequirePermission>
           }
         />

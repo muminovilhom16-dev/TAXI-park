@@ -79,3 +79,9 @@ export const paymentMethod = pgEnum("payment_method", [
 export const approvalStatus = pgEnum("approval_status", ["pending", "approved", "rejected"]);
 
 export const auditResult = pgEnum("audit_result", ["success", "failure", "denied"]);
+
+export const entryStatus = pgEnum("entry_status", ["active", "voided"]);
+
+export const chargeKind = pgEnum("charge_kind", ["subscription", "commission", "other"]);
+
+export const earningSource = pgEnum("earning_source", ["manual", "csv"]);

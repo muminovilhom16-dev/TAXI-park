@@ -22,6 +22,20 @@
       "when": 1792837304429,
       "tag": "0002_driver_accounts",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792839258468,
+      "tag": "0003_daily_finance",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792839268026,
+      "tag": "0004_daily_finance_integrity",
+      "breakpoints": true
     }
   ]
 }

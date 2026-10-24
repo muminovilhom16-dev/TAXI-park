@@ -1,5 +1,21 @@
 import type { Permission } from "@taxi/shared";
-import { Building2, Car, CarTaxiFront, Contact, Home, LogOut, Menu, ScrollText, UserCircle, Users, X } from "lucide-react";
+import {
+  Building2,
+  Car,
+  CarTaxiFront,
+  Contact,
+  HandCoins,
+  Home,
+  LogOut,
+  Menu,
+  ReceiptText,
+  ScrollText,
+  Settings2,
+  UserCircle,
+  Users,
+  Wallet,
+  X,
+} from "lucide-react";
 import { useState, type ComponentType } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router";
 import { Button } from "@/components/ui/button";
@@ -20,6 +36,10 @@ export const NAV: NavItem[] = [
   { to: "/drivers", label: "Haydovchilar", icon: Contact, perms: ["drivers.read_all", "drivers.read_assigned"] },
   { to: "/vehicles", label: "Avtomobillar", icon: Car, perms: ["drivers.read_all"] },
   { to: "/aggregators", label: "Agregatorlar", icon: Building2, perms: ["aggregators.manage", "drivers.read_all"] },
+  { to: "/earnings", label: "Kunlik tushum", icon: ReceiptText, perms: ["finance.read"] },
+  { to: "/debts", label: "Qarzlar", icon: HandCoins, perms: ["finance.read"] },
+  { to: "/payments", label: "To'lovlar", icon: Wallet, perms: ["finance.read"] },
+  { to: "/finance-settings", label: "Moliya sozlamalari", icon: Settings2, perms: ["finance.read"] },
   { to: "/users", label: "Xodimlar", icon: Users, perms: ["users.manage"] },
   { to: "/audit", label: "Audit tarixi", icon: ScrollText, perms: ["audit.read"] },
   { to: "/profile", label: "Profil", icon: UserCircle },

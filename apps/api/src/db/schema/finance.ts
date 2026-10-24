@@ -17,7 +17,10 @@ import { id, money, percent, timestamps } from "./columns.js";
 import { aggregators, drivers } from "./crm.js";
 import {
   approvalStatus,
+  chargeKind,
   commissionBaseType,
+  earningSource,
+  entryStatus,
   importStatus,
   moneyFlowModel,
   paymentMethod,
@@ -254,5 +257,94 @@ export const paymentAllocations = pgTable(
     check("allocation_amount_positive", sql`${t.amount} > 0`),
     uniqueIndex("allocations_tx_settlement_uq").on(t.transactionId, t.settlementId),
     index("allocations_settlement_idx").on(t.settlementId),
+  ],
+);
+
+// One driver's takings for one working day on one aggregator, as entered by
+// staff or loaded from a CSV. The commission is computed on entry and frozen
+// together with the policy and rate that produced it; a correction voids the
+// row and enters a new one (enforced by trigger).
+export const dailyEarnings = pgTable(
+  "daily_earnings",
+  {
+    id: id(),
+    driverId: uuid("driver_id")
+      .notNull()
+      .references(() => drivers.id),
+    aggregatorId: uuid("aggregator_id")
+      .notNull()
+      .references(() => aggregators.id),
+    workDate: date("work_date").notNull(),
+    grossAmount: money("gross_amount").notNull(),
+    commissionPolicyId: uuid("commission_policy_id")
+      .notNull()
+      .references(() => commissionPolicies.id),
+    commissionRatePercent: percent("commission_rate_percent").notNull(),
+    commissionAmount: money("commission_amount").notNull(),
+    source: earningSource("source").notNull(),
+    importBatchId: uuid("import_batch_id").references(() => importBatches.id),
+    note: text("note"),
+    status: entryStatus("status").notNull().default("active"),
+    voidedBy: uuid("voided_by").references(() => users.id),
+    voidedAt: timestamp("voided_at", { withTimezone: true }),
+    voidReason: text("void_reason"),
+    createdBy: uuid("created_by")
+      .notNull()
+      .references(() => users.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    check("earning_amounts_non_negative", sql`${t.grossAmount} >= 0 and ${t.commissionAmount} >= 0`),
+    check("earning_commission_le_gross", sql`${t.commissionAmount} <= ${t.grossAmount}`),
+    check(
+      "earning_void_complete",
+      sql`(${t.status} = 'active') = (${t.voidedAt} is null) and (${t.status} = 'active' or ${t.voidReason} is not null)`,
+    ),
+    uniqueIndex("earnings_one_active_uq")
+      .on(t.driverId, t.aggregatorId, t.workDate)
+      .where(sql`${t.status} = 'active'`),
+    index("earnings_date_idx").on(t.workDate),
+    index("earnings_driver_idx").on(t.driverId, t.workDate),
+  ],
+);
+
+// What a driver owes the park: the daily subscription, and the commission when
+// the park collects it from the driver. Debt = active charges − payments.
+export const driverCharges = pgTable(
+  "driver_charges",
+  {
+    id: id(),
+    driverId: uuid("driver_id")
+      .notNull()
+      .references(() => drivers.id),
+    kind: chargeKind("kind").notNull(),
+    chargeDate: date("charge_date").notNull(),
+    amount: money("amount").notNull(),
+    earningId: uuid("earning_id").references(() => dailyEarnings.id),
+    note: text("note"),
+    status: entryStatus("status").notNull().default("active"),
+    voidedBy: uuid("voided_by").references(() => users.id),
+    voidedAt: timestamp("voided_at", { withTimezone: true }),
+    voidReason: text("void_reason"),
+    // Null when the nightly job created it.
+    createdBy: uuid("created_by").references(() => users.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    check("charge_amount_positive", sql`${t.amount} > 0`),
+    check(
+      "charge_void_complete",
+      sql`(${t.status} = 'active') = (${t.voidedAt} is null) and (${t.status} = 'active' or ${t.voidReason} is not null)`,
+    ),
+    check("charge_commission_has_earning", sql`(${t.kind} = 'commission') = (${t.earningId} is not null)`),
+    // A driver is charged the subscription at most once per day, however often accrual runs.
+    uniqueIndex("charges_subscription_daily_uq")
+      .on(t.driverId, t.chargeDate)
+      .where(sql`${t.kind} = 'subscription' and ${t.status} = 'active'`),
+    uniqueIndex("charges_earning_uq")
+      .on(t.earningId)
+      .where(sql`${t.status} = 'active'`),
+    index("charges_driver_idx").on(t.driverId, t.chargeDate),
+    index("charges_date_idx").on(t.chargeDate),
   ],
 );

@@ -28,6 +28,11 @@ const matrix: { url: string; allowed: RoleCode[] }[] = [
   { url: "/api/aggregators", allowed: ["owner", "admin", "manager", "accountant", "operator"] },
   { url: "/api/vehicles", allowed: ["owner", "admin", "accountant", "operator"] },
   { url: "/api/users/options", allowed: ["owner", "admin", "accountant", "operator"] },
+  { url: "/api/earnings", allowed: ["owner", "accountant"] },
+  { url: "/api/payments", allowed: ["owner", "accountant"] },
+  { url: "/api/finance/debts", allowed: ["owner", "accountant"] },
+  { url: "/api/finance/settings", allowed: ["owner", "accountant"] },
+  { url: "/api/dashboard/finance", allowed: ["owner", "accountant"] },
 ];
 
 describe("server-side authorization", () => {
